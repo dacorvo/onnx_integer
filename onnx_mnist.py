@@ -33,10 +33,16 @@ def main():
     ort_session = onnxruntime.InferenceSession(args.model)
 
     # Prepare dataloader
-    transform=transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-        ])
+    if ort_session.get_inputs()[0].type == 'tensor(float)':
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+            ])
+    else:
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+            transforms.ConvertImageDtype(torch.uint8)
+            ])
     dataset = datasets.MNIST('../data', train=False, transform=transform)
     test_kwargs = {'batch_size': args.test_batch_size}
     test_loader = torch.utils.data.DataLoader(dataset, **test_kwargs)
