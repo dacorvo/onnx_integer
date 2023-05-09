@@ -34,7 +34,7 @@ source ./onnx_fp_venv/bin/activate
 The first step is to instantiate and train a basic MNIST model for a few epochs.
 
 ```
-python train_mnist_model.py --epochs 5
+python train_mnist_model.py --epochs 5 --save_model
 ```
 
 This should produce a model that reaches `99 %` accuracy, and save it as `mnist_cnn.pt`.
@@ -76,7 +76,7 @@ python torch_to_onnx.py --model mnist_cnn_quantized.pts \
                         --test-batch-size 1000
 ```
 
-Once converted, the model can be sued for inference on the MNIST test set.
+Once converted, the model can be used for inference on the MNIST test set.
 
 ```
 python onnx_mnist.py --model mnist_cnn_quantized.onnx \
@@ -129,6 +129,66 @@ This transformation is available through the new `add_rescaling` transform:
 
 ```
 python onnx_transforms.py --model mnist_cnn_quantized.onnx \
-                          --save_model mnist_cnn_sanitized.onnx \
+                          --save_model mnist_cnn_rescaled.onnx \
                           --add_rescaling --scale 0.0127 --zero-point 33
+```
+
+### Remove useless Quantize/Dequantize sequences
+
+When a Node corresponds to an operation that accepts either float or integer
+input, there is no need to quantize and dequantize the outputs of the previous
+operation.
+
+Example:
+
+```
+Linear -> Quantize -> Cast -> Dequantize -> ReLU   <=>   Linear -> ReLU
+```
+
+This transformation is available using the new `prune_qdq` transform:
+
+```
+python onnx_transforms.py --model mnist_cnn_rescaled.onnx \
+                          --save_model mnist_cnn_pruned.onnx \
+                          --prune_qdq
+```
+
+### Fold inputs and weights scale into the layer output scale
+
+Each operation has the following pattern:
+
+Dequantize(inputs,           Dequantize(weights,
+           i_scale,                     w_scale,
+           i_zeropoint)                 w_zeropoint)
+                 \              /
+                     operation
+                         |
+                      Quantize(outputs, o_scale, o_zeropoint)
+
+The goal of this transformation is to fold the inputs and weights scales into
+the output scale:
+
+o_scale = o_scale / (i_scale * w_scale)
+i_scale = 1.0
+w_scale = 1.0
+
+Note: bias scale wich is equal to i_scale * w_scale before folding is also set to 1.0
+
+```
+python onnx_transforms.py --model mnist_cnn_pruned.onnx \
+                          --save_model mnist_cnn_folded.onnx \
+                          --fold_op_scales
+```
+
+### Perform bias addition as a separate operation
+
+ConvInteger and MatMulInteger operations do not support biases.
+
+The graph is therefore modified to remove the biases from the Conv and Linear operations and
+add them as an explicit operation instead.
+
+```
+python onnx_transforms.py --model mnist_cnn_folded.onnx \
+                          --save_model mnist_cnn_split.onnx \
+                          --split_bias_add
 ```
