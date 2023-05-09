@@ -1,5 +1,5 @@
 # ONNX FixedPoint proof-of-concept
-A proof-of-concept for the conversion of a quantized pytorch model to an ONNX FixedPOint graph of operations
+A proof-of-concept for the conversion of a quantized pytorch model to an ONNX FixedPoint graph of operations
 
 ## Docker setup
 
@@ -20,13 +20,13 @@ A proof-of-concept for the conversion of a quantized pytorch model to an ONNX Fi
 ### Create venv
 
 ```
-python -m venv onnx_tf_venv
+python -m venv onnx_fp_venv
 ```
 
 ### Activate venv
 
 ```
-source ./onnx_tf_venv/bin/activate
+source ./onnx_fp_venv/bin/activate
 ```
 
 ## Training of a basic MNIST model

@@ -13,15 +13,17 @@ done
 set -e
 if [[ ${compile} -eq 1 ]]; then
        echo "Compiling docker image ..."
-       docker build --rm -t onnx_tf -f docker/Dockerfile-torch2.0.0 .
+       docker build --rm -t onnx_fp -f docker/Dockerfile-torch2.0.0 .
 fi
 
 # Run docker image
 docker run -it --rm \
         -v ~:/home/$(id -un) \
+        -v /etc/group:/etc/group:ro \
+        -v /etc/passwd:/etc/passwd:ro \
         -u $(id -u):$(id -g) \
         -w $(pwd) \
         -e HISTFILE=$(pwd)/.docker_history \
         --gpus all \
         --privileged --net=host --ipc=host \
-        onnx_tf
+        onnx_fp
