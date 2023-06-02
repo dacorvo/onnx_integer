@@ -1,11 +1,9 @@
 import argparse
-import copy
 import torch
-import platform
 import onnxruntime
 
 from torchvision import datasets, transforms
-from torch.quantization import quantize_fx
+from timeit import default_timer as timer
 
 
 def to_numpy(tensor):
@@ -13,14 +11,17 @@ def to_numpy(tensor):
 
 def onnx_eval(ort_session, test_loader): 
     correct = 0
+    start = timer()
     for data, target in test_loader:
         ort_inputs = {ort_session.get_inputs()[0].name: to_numpy(data)}
         ort_outputs = ort_session.run(None, ort_inputs)
         pred = ort_outputs[0].argmax(axis=1)
         correct += (pred == to_numpy(target)).sum()
+    elapsed = timer() - start
     print('\nTest set: Accuracy: {}/{} ({:.0f}%)\n'.format(
         correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+    print(f'Inference took {elapsed:.4f} seconds.')
 
 def main():
     parser = argparse.ArgumentParser(description='ONNX MNIST inference script')
@@ -30,7 +31,7 @@ def main():
                         help='input batch size for testing (default: 1000)')
     args = parser.parse_args()
     # Load the model into an onnx runtime session
-    ort_session = onnxruntime.InferenceSession(args.model)
+    ort_session = onnxruntime.InferenceSession(args.model, providers=['OpenVINOExecutionProvider'])
 
     # Prepare dataloader
     if ort_session.get_inputs()[0].type == 'tensor(float)':
