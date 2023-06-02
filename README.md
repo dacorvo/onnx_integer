@@ -1,5 +1,5 @@
-# ONNX FixedPoint proof-of-concept
-A proof-of-concept for the conversion of a quantized pytorch model to an ONNX FixedPoint graph of operations
+# ONNX integer graph proof-of-concept
+A proof-of-concept for the conversion of a quantized ONN model to an integer graph of operations
 
 ## Docker setup
 
