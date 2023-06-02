@@ -29,21 +29,25 @@ def main():
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
-    parser.add_argument('--save-model', action='store_true', default=False,
-                        help='For Saving the current Model')
+    parser.add_argument('--save-model', type=str, default="mnist_cnn.pts",
+                        help='The name of the trained Model.')
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
 
     if torch.cuda.is_available():
         device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
     else:
         device = torch.device("cpu")
 
     train_kwargs = {'batch_size': args.batch_size}
     test_kwargs = {'batch_size': args.test_batch_size}
+    if torch.cuda.is_available():
+        cuda_kwargs = {'num_workers': 1,
+                       'pin_memory': True,
+                       'shuffle': True}
+        train_kwargs.update(cuda_kwargs)
+        test_kwargs.update(cuda_kwargs)
 
     transform=transforms.Compose([
         transforms.ToTensor(),
@@ -65,8 +69,12 @@ def main():
         test(model, device, test_loader)
         scheduler.step()
 
-    if args.save_model:
-        torch.save(model.state_dict(), "mnist_cnn.pt")
+    if args.save_model.endswith('.pts'):
+        # Save the model in TorchScript
+        model_script = torch.jit.script(model)
+        model_script.save(args.save_model)
+    else:
+        torch.save(model.state_dict(), args.save_model)
 
 
 if __name__ == '__main__':
