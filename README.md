@@ -36,6 +36,8 @@ python onnx_mnist.py --model mnist_cnn.onnx \
                      --test-batch-size 1000
 ```
 
+![ONNX MNIST Model](mnist_cnn.png)
+
 ## Quantize a trained ONNX MNIST model
 
 The next step is to statically quantize the float MNIST model to 8-bit.
@@ -48,6 +50,8 @@ python onnx_mnist_quantize.py --model mnist_cnn.onnx \
 
 This will quantize the model to 8-bit and calibrate it, resulting in a model
 with an equivalent accuracy (99 %).
+
+![ONNX Quantized MNIST Model](mnist_cnn_quantized.png)
 
 ## Modify the ONNX quantized model to use integer-only operation
 
@@ -189,3 +193,5 @@ python onnx_transforms.py --model mnist_cnn_integer.onnx \
                           --save_model mnist_cnn_scale_out.onnx \
                           --scale_out
 ```
+
+![ONNX Integer MNIST Model](mnist_cnn_scale_out.png)
